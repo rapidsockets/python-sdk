@@ -1,0 +1,5 @@
+__pycache__
+test.py
+dist/
+build/
+rapidsockets.egg-info/

@@ -5,19 +5,26 @@ import requests
 import threading
 import collections
 import time
+import random
 
 class RapidSockets(object):
     def __init__(self, options={}):
-        self.gateway = options['gateway'] if 'gateway' in options else 'wss://gateway.rapidsockets.com';
-        self.api = options['api'] if 'api' in options else 'https://api.rapidsockets.com'
-        self.connection = None;
-        self.authenticated = False;
-        self.session = hashlib.sha256(b'asd').hexdigest();
-        self.packet_queue = [];
-        self.cbs = [];
-        self.subscriptions = [];
+        rand1 = random.uniform(0, 1)
+        rand2 = random.uniform(0, 1)
+        rand3 = random.uniform(0, 1)
 
-        self.key = options['key'] if 'key' in options else None;
+        self.gateway = options['gateway'] if 'gateway' in options else 'wss://gateway.rapidsockets.com'
+        self.api = options['api'] if 'api' in options else 'https://api.rapidsockets.com'
+        self.connection = None
+        self.authenticated = False
+        self.session = hashlib \
+            .sha256('{}-{}-{}'.format(rand1, rand2, rand3).encode()) \
+            .hexdigest()
+        self.packet_queue = []
+        self.cbs = []
+        self.subscriptions = []
+
+        self.key = options['key'] if 'key' in options else None
 
         t = threading.Thread(target=self.start)
         t.start()
@@ -36,7 +43,7 @@ class RapidSockets(object):
         while True:
             self.connection.run_forever()
 
-    def on_open(self, ws):
+    def on_open(self):
         packet = {
             'action': 'authorize',
             'payload': {
@@ -46,50 +53,50 @@ class RapidSockets(object):
 
         self.connection.send(json.dumps(packet))
 
-    def on_message(self, ws, packet):
+    def on_message(self, packet):
         try:
             packet = json.loads(packet)
 
             # handle auth fail
             if packet['code'] == 'auth_fail':
-                print('Gateway authentication failed');
-                return;
+                print('Gateway authentication failed')
+                return
 
             # handle auth success
             if packet['code'] == 'auth_success':
-                self.authenticated = True;
-                self.flush_queue();
-                self.establish_subscriptions();
+                self.authenticated = True
+                self.flush_queue()
+                self.establish_subscriptions()
 
             # handle ping
             if packet['code'] == 'latency':
                 for cb in self.cbs:
                     if cb['operation'] != 'latency':
-                        return;
+                        return
 
-                    cb['callback'](packet['payload']);
+                    cb['callback'](packet['payload'])
 
             # detect same client
             if 'session' in packet['payload'] and packet['payload']['session'] == self.session:
-                return;
+                return
 
             # handle packet
             if packet['code'] == 'message':
                 for subscription in self.subscriptions:
                     if subscription['channel'] != packet['payload']['channel']:
-                        return;
+                        return
 
                     packet['payload']['message'] = json.loads(packet['payload']['message'])
 
-                    subscription['callback'](packet);
+                    subscription['callback'](packet)
         except:
             print('Invalid packet received from Gateway: {}'.format(packet))
 
-    def on_close(self, ws):
+    def on_close(self):
         # handled by run_forever
         pass
 
-    def on_error(self, ws, error):
+    def on_error(self, error):
         # handled by run_forever
         pass
 

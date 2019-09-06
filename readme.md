@@ -34,8 +34,8 @@ rs.publish({
 python3 setup.py bdist_wheel
 
 # install test wheel
-python3 -m pip install dist/rapidsockets-0.0.3-py3-none-any.whl
+python3 -m pip install dist/rapidsockets-0.0.4-py3-none-any.whl
 
 # upload to pypi
-python3 -m twine upload dist/rapidsockets-0.0.3-py3-none-any.whl
+python3 -m twine upload dist/rapidsockets-0.0.4-py3-none-any.whl
 ```

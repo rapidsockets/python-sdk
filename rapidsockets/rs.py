@@ -26,11 +26,11 @@ class RapidSockets(object):
 
         self.key = options['key'] if 'key' in options else None
 
-        t = threading.Thread(target=self.start)
-        t.start()
+        self.start()
 
     def start(self):
-        self.open_connection()
+        t = threading.Thread(target=self.open_connection)
+        t.start()
 
     def open_connection(self):
         self.connection = websocket.WebSocketApp(self.gateway,
@@ -40,10 +40,11 @@ class RapidSockets(object):
 
         self.connection.on_open = self.on_open
 
-        while True:
-            self.connection.run_forever()
+        self.connection.run_forever()
 
     def on_open(self):
+        print('Connection established with RapidSockets Gateway')
+
         packet = {
             'action': 'authorize',
             'payload': {
@@ -59,7 +60,7 @@ class RapidSockets(object):
 
             # handle auth fail
             if packet['code'] == 'auth_fail':
-                print('Gateway authentication failed')
+                print('RapidSockets Gateway authentication failed')
                 return
 
             # handle auth success
@@ -90,15 +91,21 @@ class RapidSockets(object):
 
                     subscription['callback'](packet)
         except:
-            print('Invalid packet received from Gateway: {}'.format(packet))
+            print('Invalid packet received from RapidSockets Gateway: {}'.format(packet))
 
     def on_close(self):
-        # handled by run_forever
-        pass
+        print('Connection to the RapidSockets Gateway was lost')
+
+        self.authenticated = False
+
+        time.sleep(3)
+
+        print('Attempting to reconnect to the RapidSockets Gateway...')
+
+        self.start()
 
     def on_error(self, error):
-        # handled by run_forever
-        pass
+        raise error
 
     def flush_queue(self):
         if len(self.packet_queue) > 0:

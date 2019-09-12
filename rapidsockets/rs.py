@@ -15,6 +15,7 @@ class RapidSockets(object):
 
         self.gateway = options['gateway'] if 'gateway' in options else 'wss://gateway.rapidsockets.com'
         self.api = options['api'] if 'api' in options else 'https://api.rapidsockets.com'
+        self.nonblocking = options['nonblocking'] if 'nonblocking' in options else False
         self.connection = None
         self.authenticated = False
         self.session = hashlib \
@@ -26,10 +27,13 @@ class RapidSockets(object):
 
         self.key = options['key'] if 'key' in options else None
 
-        self.start()
+        if not self.key.startswith('pub'):
+            self.start()
 
     def start(self):
         t = threading.Thread(target=self.open_connection)
+        if self.nonblocking:
+            t.daemon = True
         t.start()
 
     def open_connection(self):
@@ -87,9 +91,15 @@ class RapidSockets(object):
                     if subscription['channel'] != packet['payload']['channel']:
                         return
 
-                    packet['payload']['message'] = json.loads(packet['payload']['message'])
+                    payload = packet['payload']
 
-                    subscription['callback'](packet)
+                    try:
+                        payload['message'] = json.loads(payload['message'])
+                    except ValueError:
+                        # invalid json means just hand off the payload message as is
+                        pass
+
+                    subscription['callback'](payload)
         except:
             print('Invalid packet received from RapidSockets Gateway: {}'.format(packet))
 

@@ -8,24 +8,33 @@ This is the official Software Development Kit for Python to interact with the Ra
 pip install rapidsockets
 ```
 
-### Usage
+### Quickstart
 ```python
+from rapidsockets import RapidSockets
+import time
+
+# initialize and open a connection to the RapidSockets Gateway
 rs = RapidSockets({
-    key: 'your key'
-});
+    'key': 'your multi key'
+})
 
-def mychannel(packet):
-    print(packet['payload']['message']) # my message
+# the callback function run on a new message to channel "mytest"
+def mytest(packet):
+    print(packet)
 
+# start listening for new messages on channel "mytest"
 rs.subscribe({
-    'channel': 'mychannel',
-    'callback': mychannel
+    'channel': 'mytest',
+    'callback': mytest
 })
 
-rs.publish({
-    'channel': 'mychannel',
-    'message': 'my message'
-})
+# as a test, publish messages to channel "mytest" every two seconds
+while True:
+    rs.publish({
+        'channel': 'mytest',
+        'message': 'test message'
+    })
+    time.sleep(2)
 ```
 
 ### Development specific notes
@@ -34,8 +43,8 @@ rs.publish({
 python3 setup.py bdist_wheel
 
 # install test wheel
-python3 -m pip install dist/rapidsockets-0.0.4-py3-none-any.whl
+python3 -m pip install dist/rapidsockets-0.0.5-py3-none-any.whl
 
 # upload to pypi
-python3 -m twine upload dist/rapidsockets-0.0.4-py3-none-any.whl
+python3 -m twine upload dist/rapidsockets-0.0.5-py3-none-any.whl
 ```
